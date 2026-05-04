@@ -5,25 +5,25 @@ const CELL = 24
 const W = GRID * CELL
 const H = GRID * CELL
 const TICK_MS = 140
+const TOTAL_CELLS = GRID * GRID
 
 const PHRASES = [
-  '¡Ten un buen día!', '¡Eres increíble!', '¡La vida es bella!',
-  '¡Sonríe siempre!', '¡Tú puedes!', '¡Eres genial!',
-  '¡Viva la vida!', '¡Hoy es tu día!', '¡Eres lo máximo!',
-  '¡Arriba el ánimo!', '¡Qué buena onda!', '¡Todo va bien!',
-  '¡Eres un crack!', '¡Muy bien hecho!', '¡Qué buena vibra!',
-  '¡Sigue adelante!', '¡El éxito te espera!', '¡Carpe Diem!',
-  '¡Échale ganas!', '¡Qué buen juego!', '¡Feliz día!',
-  '¡Tú lo lograste!', '¡Eres una estrella!', '¡Bravo campeón!',
-  '¡Qué talentoso!', '¡Sigue así!', '¡Fantástico!',
-  '¡Woooooo!', '¡Imparable!', '¡Qué leyenda!',
-  '¡Gran jugador!', '¡Maestro del snake!', '¡10 manzanas wow!',
-  '¡Eres el mejor!', '¡Qué destreza!', '¡Pura genialidad!',
-  '¡Tremendo crack!', '¡A por más!', '¡Sin límites!',
-  '¡Hazlo de nuevo!', '¡Modo dios ON!', '¡Monstruo del game!',
-  '¡Nivel legendario!', '¡GG bien jugado!', '¡Que no pare!',
-  '¡Fuera de serie!', '¡Eres el campeón!', '¡Top 1 mundial!',
-  '¡Jugador élite!', '¡Nada te detiene!',
+  '¡Ten un buen día! 🌞', '¡Eres increíble! ✨', '¡La vida es bella! 🌈',
+  '¡Sonríe siempre! 😄', '¡Tú puedes! 💪', '¡Eres genial! 🎉',
+  '¡Viva la vida! 🎊', '¡Hoy es tu día! 🌟', '¡Eres lo máximo! 🏆',
+  '¡Arriba el ánimo! 🚀', '¡Qué buena onda! 😎', '¡Todo va bien! 👌',
+  '¡Eres un crack! 🔥', '¡Muy bien hecho! 👏', '¡Qué buena vibra! ⚡',
+  '¡Sigue adelante! 🏃', '¡Carpe Diem! ⏳', '¡Échale ganas! 💥',
+  '¡Qué buen juego! 🎮', '¡Feliz día! ☀️', '¡Tú lo lograste! 🥇',
+  '¡Eres una estrella! ⭐', '¡Bravo campeón! 🎖️', '¡Qué talentoso! 🎯',
+  '¡Sigue así! 👍', '¡Fantástico! 🤩', '¡Woooooo! 🎆', '¡Imparable! ⚡',
+  '¡Qué leyenda! 🦁', '¡Gran jugador! 🕹️', '¡Maestro del snake! 🐍',
+  '¡Eres el mejor! 🌠', '¡Qué destreza! 🎪', '¡Pura genialidad! 🧠',
+  '¡Tremendo crack! 💎', '¡A por más! 🚀', '¡Sin límites! ∞',
+  '¡Hazlo de nuevo! 🔄', '¡Modo dios ON! ⚡', '¡Nivel legendario! 👑',
+  '¡GG bien jugado! 🏅', '¡Que no pare! 🎶', '¡Fuera de serie! 🌟',
+  '¡Eres el campeón! 🥇', '¡Top 1 mundial! 🌍', '¡Jugador élite! 💯',
+  '¡Nada te detiene! 🔥', '¡Eres único! 💫', '¡Sigue brillando! ✨',
 ]
 
 function randomPhrase(exclude) {
@@ -40,34 +40,41 @@ function shuffle(arr) {
   return a
 }
 
-function getTextCells(phrase) {
+function buildCoverOrder() {
+  const cells = []
+  for (let y = 0; y < GRID; y++)
+    for (let x = 0; x < GRID; x++)
+      cells.push({ x, y })
+  return shuffle(cells)
+}
+
+function renderPhraseToCanvas(phrase) {
   const canvas = document.createElement('canvas')
   canvas.width = W
   canvas.height = H
   const ctx = canvas.getContext('2d')
 
-  let size = 88
+  const words = phrase.split(' ')
+  const half = Math.ceil(words.length / 2)
+  const lines = words.length > 2
+    ? [words.slice(0, half).join(' '), words.slice(half).join(' ')]
+    : [phrase]
+
+  // Find font size so longest line fits in ~90% of width
+  let size = Math.floor((H * 0.38) / lines.length)
   ctx.font = `bold ${size}px sans-serif`
-  while (ctx.measureText(phrase).width > W - 24 && size > 16) {
-    size -= 4
-    ctx.font = `bold ${size}px sans-serif`
-  }
-  ctx.fillStyle = '#fff'
+  const maxW = lines.reduce((m, l) => Math.max(m, ctx.measureText(l).width), 0)
+  if (maxW > W * 0.92) size = Math.floor(size * W * 0.92 / maxW)
+  size = Math.max(size, 18)
+  ctx.font = `bold ${size}px sans-serif`
+
+  const lineH = H / (lines.length + 1)
+  ctx.fillStyle = 'rgba(80, 210, 255, 0.92)'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(phrase, W / 2, H / 2)
+  lines.forEach((line, i) => ctx.fillText(line, W / 2, lineH * (i + 1)))
 
-  const imageData = ctx.getImageData(0, 0, W, H)
-  const cells = []
-  for (let gy = 0; gy < GRID; gy++) {
-    for (let gx = 0; gx < GRID; gx++) {
-      const px = Math.round(gx * CELL + CELL / 2)
-      const py = Math.round(gy * CELL + CELL / 2)
-      const idx = (py * W + px) * 4
-      if (imageData.data[idx + 3] > 64) cells.push({ x: gx, y: gy })
-    }
-  }
-  return shuffle(cells)
+  return canvas
 }
 
 function makeSnake() {
@@ -105,6 +112,7 @@ function tick(state) {
     state.snake.pop()
   } else {
     state.score++
+    state.revealCount = Math.floor(TOTAL_CELLS * state.score / 10)
     if (state.score >= 10) return true
     state.apple = randomApple(state.snake)
   }
@@ -112,52 +120,55 @@ function tick(state) {
 }
 
 function render(ctx, state) {
+  // 1. Dark background
   ctx.fillStyle = '#0d0d1a'
   ctx.fillRect(0, 0, W, H)
 
-  // Revealed text cells
-  const n = Math.floor(state.textCells.length * state.score / 10)
-  for (let i = 0; i < n; i++) {
-    const c = state.textCells[i]
-    const alpha = 0.15 + 0.25 * (state.score / 10)
-    ctx.fillStyle = `rgba(80,200,255,${alpha})`
-    ctx.fillRect(c.x * CELL, c.y * CELL, CELL - 1, CELL - 1)
+  // 2. Phrase text (always drawn, revealed by removing cover blocks)
+  if (state.phraseCanvas) ctx.drawImage(state.phraseCanvas, 0, 0)
+
+  // 3. Cover blocks hiding unrevealed parts of the phrase
+  ctx.fillStyle = '#0d0d1a'
+  for (let i = state.revealCount; i < TOTAL_CELLS; i++) {
+    const c = state.coverOrder[i]
+    ctx.fillRect(c.x * CELL, c.y * CELL, CELL, CELL)
   }
 
-  // Apple
+  // 4. Grid lines (subtle, so phrase shines through)
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)'
+  ctx.lineWidth = 0.5
+  for (let x = 0; x <= GRID; x++) {
+    ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, H); ctx.stroke()
+  }
+  for (let y = 0; y <= GRID; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(W, y * CELL); ctx.stroke()
+  }
+
+  // 5. Apple
   const ax = state.apple.x * CELL + CELL / 2
   const ay = state.apple.y * CELL + CELL / 2
   ctx.fillStyle = '#ff4757'
-  ctx.beginPath()
-  ctx.arc(ax, ay, CELL / 2 - 2, 0, Math.PI * 2)
-  ctx.fill()
-  // apple stem
-  ctx.strokeStyle = '#4a9'
-  ctx.lineWidth = 2
-  ctx.beginPath()
-  ctx.moveTo(ax, ay - CELL / 2 + 3)
-  ctx.lineTo(ax + 3, ay - CELL / 2 - 2)
-  ctx.stroke()
+  ctx.beginPath(); ctx.arc(ax, ay, CELL / 2 - 2, 0, Math.PI * 2); ctx.fill()
+  ctx.strokeStyle = '#4a9'; ctx.lineWidth = 2
+  ctx.beginPath(); ctx.moveTo(ax, ay - CELL / 2 + 3); ctx.lineTo(ax + 3, ay - CELL / 2 - 2); ctx.stroke()
 
-  // Snake
+  // 6. Snake
   state.snake.forEach((seg, i) => {
     const ratio = 1 - i / state.snake.length
-    const hue = 130 + i * 2
-    ctx.fillStyle = `hsl(${hue}, 75%, ${35 + ratio * 20}%)`
-    const pad = i === 0 ? 1 : 2
+    ctx.fillStyle = `hsl(${128 + i * 2}, 75%, ${35 + ratio * 22}%)`
+    const pad = 2
     ctx.fillRect(seg.x * CELL + pad, seg.y * CELL + pad, CELL - pad * 2, CELL - pad * 2)
     if (i === 0) {
-      // eyes
       ctx.fillStyle = '#fff'
-      const ex = seg.x * CELL + (state.dir.x === 0 ? CELL / 2 - 4 : state.dir.x > 0 ? CELL - 7 : 5)
-      const ey = seg.y * CELL + (state.dir.y === 0 ? CELL / 2 - 4 : state.dir.y > 0 ? CELL - 7 : 5)
+      const ex = seg.x * CELL + (state.dir.x === 0 ? CELL / 2 - 4 : state.dir.x > 0 ? CELL - 7 : 4)
+      const ey = seg.y * CELL + (state.dir.y === 0 ? CELL / 2 - 4 : state.dir.y > 0 ? CELL - 7 : 4)
       ctx.fillRect(ex, ey, 4, 4)
       ctx.fillRect(ex + (state.dir.x === 0 ? 7 : 0), ey + (state.dir.y === 0 ? 7 : 0), 4, 4)
     }
   })
 
-  // HUD
-  ctx.fillStyle = 'rgba(255,255,255,0.7)'
+  // 7. HUD
+  ctx.fillStyle = 'rgba(255,255,255,0.75)'
   ctx.font = 'bold 15px sans-serif'
   ctx.textAlign = 'left'
   ctx.fillText(`🍎 ${state.score} / 10`, 8, 22)
@@ -180,7 +191,9 @@ export default function App() {
       nextDir: { x: 1, y: 0 },
       apple: randomApple(snake),
       score: 0,
-      textCells: getTextCells(p),
+      revealCount: 0,
+      coverOrder: buildCoverOrder(),
+      phraseCanvas: renderPhraseToCanvas(p),
       phrase: p,
     }
     setWon(false)
@@ -188,7 +201,7 @@ export default function App() {
 
   useEffect(() => { initGame(phrase) }, []) // eslint-disable-line
 
-  // Game loop
+  // Main game loop
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -196,13 +209,12 @@ export default function App() {
 
     function loop(ts) {
       const s = stateRef.current
-      if (s && ts - lastTickRef.current > TICK_MS) {
+      if (s && !won && ts - lastTickRef.current > TICK_MS) {
         lastTickRef.current = ts
-        const won = tick(s)
-        if (won) {
+        if (tick(s)) {
+          render(ctx, { ...s, score: 10, revealCount: TOTAL_CELLS })
           setWon(true)
           setWinPhrase(s.phrase)
-          render(ctx, { ...s, score: 10 })
           return
         }
       }
@@ -212,7 +224,7 @@ export default function App() {
 
     rafRef.current = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [])
+  }, []) // eslint-disable-line
 
   // Keyboard
   useEffect(() => {
@@ -228,7 +240,7 @@ export default function App() {
       const cur = stateRef.current.dir
       if (d.x === -cur.x && d.y === -cur.y) return
       stateRef.current.nextDir = d
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault()
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -244,15 +256,18 @@ export default function App() {
       const dy = e.changedTouches[0].clientY - ty
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return
       const cur = stateRef.current.dir
-      let d
-      if (Math.abs(dx) > Math.abs(dy)) d = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 }
-      else d = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 }
+      const d = Math.abs(dx) > Math.abs(dy)
+        ? (dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 })
+        : (dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 })
       if (d.x === -cur.x && d.y === -cur.y) return
       stateRef.current.nextDir = d
     }
     window.addEventListener('touchstart', onStart, { passive: true })
     window.addEventListener('touchend', onEnd, { passive: true })
-    return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd) }
+    return () => {
+      window.removeEventListener('touchstart', onStart)
+      window.removeEventListener('touchend', onEnd)
+    }
   }, [])
 
   function restart() {
@@ -260,18 +275,22 @@ export default function App() {
     setPhrase(next)
     cancelAnimationFrame(rafRef.current)
     initGame(next)
+    lastTickRef.current = 0
 
-    // restart loop
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
-    lastTickRef.current = 0
+
     function loop(ts) {
       const s = stateRef.current
       if (s && ts - lastTickRef.current > TICK_MS) {
         lastTickRef.current = ts
-        const w = tick(s)
-        if (w) { setWon(true); setWinPhrase(s.phrase); render(ctx, { ...s, score: 10 }); return }
+        if (tick(s)) {
+          render(ctx, { ...s, score: 10, revealCount: TOTAL_CELLS })
+          setWon(true)
+          setWinPhrase(s.phrase)
+          return
+        }
       }
       if (s) render(ctx, s)
       rafRef.current = requestAnimationFrame(loop)
@@ -288,9 +307,9 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#08080f', fontFamily: 'sans-serif', padding: 12, boxSizing: 'border-box' }}>
-      <h2 style={{ color: '#eee', margin: '0 0 6px', fontSize: 20 }}>🐍 Snake</h2>
-      <p style={{ color: 'rgba(255,255,255,0.35)', marginBottom: 10, fontSize: 12 }}>
-        Flechas / WASD / desliza · come 10 🍎 para ver el mensaje
+      <h2 style={{ color: '#eee', margin: '0 0 4px', fontSize: 18 }}>🐍 Snake</h2>
+      <p style={{ color: 'rgba(255,255,255,0.3)', marginBottom: 10, fontSize: 11 }}>
+        Flechas / WASD / desliza · come 10 🍎 para descubrir el mensaje
       </p>
 
       <div style={{ position: 'relative', width: '100%', maxWidth: W }}>
@@ -298,14 +317,14 @@ export default function App() {
           ref={canvasRef}
           width={W}
           height={H}
-          style={{ display: 'block', width: '100%', height: 'auto', borderRadius: 8, border: '1px solid rgba(80,200,255,0.2)' }}
+          style={{ display: 'block', width: '100%', height: 'auto', borderRadius: 8, border: '1px solid rgba(80,200,255,0.15)' }}
         />
 
         {won && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 8, padding: 24, boxSizing: 'border-box' }}>
-            <div style={{ fontSize: 36, marginBottom: 10 }}>🎉</div>
-            <p style={{ fontSize: 26, fontWeight: 'bold', color: '#ffd700', textAlign: 'center', marginBottom: 6 }}>¡Ganaste!</p>
-            <p style={{ fontSize: 20, color: '#fff', fontWeight: 'bold', textAlign: 'center', marginBottom: 28, lineHeight: 1.3 }}>{winPhrase}</p>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 8, padding: 24, boxSizing: 'border-box' }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
+            <p style={{ fontSize: 15, color: '#adf', textAlign: 'center', marginBottom: 4 }}>¡Completaste el mensaje!</p>
+            <p style={{ fontSize: 22, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 28, lineHeight: 1.4 }}>{winPhrase}</p>
             <button
               onClick={restart}
               style={{ padding: '12px 36px', fontSize: 17, fontWeight: 'bold', background: '#ff4757', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}
@@ -317,7 +336,7 @@ export default function App() {
       </div>
 
       {/* Mobile D-pad */}
-      <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 52px)', gridTemplateRows: 'repeat(3, 52px)', gap: 4 }}>
+      <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(3, 50px)', gridTemplateRows: 'repeat(3, 50px)', gap: 4 }}>
         {[
           [null, { x: 0, y: -1 }, null],
           [{ x: -1, y: 0 }, null, { x: 1, y: 0 }],
@@ -327,7 +346,7 @@ export default function App() {
             <button
               key={i}
               onPointerDown={e => { e.preventDefault(); setDir(d) }}
-              style={{ width: 52, height: 52, background: 'rgba(80,200,255,0.15)', border: '1px solid rgba(80,200,255,0.3)', borderRadius: 8, cursor: 'pointer', color: '#fff', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}
+              style={{ width: 50, height: 50, background: 'rgba(80,200,255,0.12)', border: '1px solid rgba(80,200,255,0.25)', borderRadius: 8, cursor: 'pointer', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}
             >
               {d.y === -1 ? '▲' : d.y === 1 ? '▼' : d.x === -1 ? '◀' : '▶'}
             </button>
