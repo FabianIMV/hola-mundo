@@ -1,16 +1,22 @@
-# React + Vite
+# 🐍 Snake Motivation Message
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A Snake game where eating apples progressively reveals a motivational message in the background. Eat 10 apples to uncover the full phrase — then restart with a new one from a pool of 50.
 
-Currently, two official plugins are available:
+**Play it live:** https://fabianimv.github.io/snake-motivation-message/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- Canvas-based Snake with smooth controls
+- Background phrase revealed block by block as you eat apples
+- 50 fun Spanish motivational phrases with emoji
+- Mobile-friendly: swipe controls + on-screen D-pad
+- New random phrase on every restart
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Controls
 
-## Expanding the ESLint configuration
+- **Keyboard:** Arrow keys or WASD
+- **Mobile:** Swipe or tap the D-pad
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+*Hecho en conjunto por **Fabián Muñoz** y **Nano Claw** 🤝*
